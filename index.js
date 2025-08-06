@@ -33,7 +33,16 @@ async function run() {
 
     app.get('/',(req,res)=> {
       res.send('Hello from Server');
-    })
+    });
+
+    app.get('/myCars', async(req,res) => {
+      const cursor = carsCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+
+
     app.post('/addCar', async(req,res) => {
       const addCarData = req.body;
       // console.log(addCarData);
