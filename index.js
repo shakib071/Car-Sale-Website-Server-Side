@@ -30,16 +30,79 @@ async function run() {
     await client.connect();
     
     const carsCollection = client.db('carsdb').collection('cars');
+    const carsBookingCollection = client.db('carsdb').collection('bookings');
 
     app.get('/',(req,res)=> {
       res.send('Hello from Server');
     });
 
-    app.get('/myCars', async(req,res) => {
-      const cursor = carsCollection.find();
-      const result = await cursor.toArray();
+    app.get('/allCars', async(req,res) => {
+      
+      if(req.query.sort){
+        const sortquery = req.query.sort;
+        if(sortquery.split('-')[0]=='date'){
+          // console.log(sortquery.split('-')[0])
+          const dateSortOrder = sortquery.split('-')[1] === 'asc' ? 1 : -1;
+          try {
+            const result = await carsCollection.find({}).sort({"carDetails.addedDate": dateSortOrder}).toArray();
+            res.send(result);
+          }
+          catch(err){
+            res.status(500).send({ error: "Failed to fetch cars" });
+          }
+        }
+        else if(sortquery.split('-')[0]=='price'){
+          // console.log('price');
+          const priceSortOrder = sortquery.split('-')[1] === 'asc' ? 1 : -1;
+            try {
+            const result = await carsCollection.find({}).sort({"carDetails.dailyRentalPrice": priceSortOrder}).toArray();
+            res.send(result);
+          }
+          catch(err){
+            res.status(500).send({ error: "Failed to fetch cars" });
+          }
+        }
+        else{
+          const cursor = carsCollection.find();
+          const result = await cursor.toArray();
+          res.send(result);
+        }
+      }
+      else{
+        const cursor = carsCollection.find();
+        const result = await cursor.toArray();
+        res.send(result);
+      }
+      
+      
+    });
+
+   ;
+    
+    app.get('/myCars/:userId', async(req,res) => {
+      const userId = req.params.userId;
+      const query = {"userWhoAdded.uid" : userId};
+      const result = await carsCollection.find(query).toArray();
       res.send(result);
     });
+
+
+    app.get('/car-details/:id', async(req,res) => {
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)};
+      const result = await carsCollection.findOne(query);
+      res.send(result);
+    })
+
+
+    app.get('/bookings/:userId',async(req,res) => {
+      const userId = req.params.userId;
+      const query = {"userWhoAdded.uid" : userId};
+      const result = await carsBookingCollection.find(query).toArray();
+      res.send(result);
+    })
+
+
 
 
 
@@ -47,6 +110,13 @@ async function run() {
       const addCarData = req.body;
       // console.log(addCarData);
       const result = await carsCollection.insertOne(addCarData);
+      res.send(result);
+    });
+
+
+    app.post('/booking',async(req,res) => {
+      const bookingData = req.body;
+      const result = await carsBookingCollection.insertOne(bookingData);
       res.send(result);
     });
 
