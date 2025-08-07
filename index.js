@@ -138,6 +138,27 @@ async function run() {
     });
 
 
+
+    app.patch('/update-my-car/:id', async(req,res)=> {
+      const id = req.params.id;
+      const UpdatedDetails = req.body;
+
+      const filter = {_id : new ObjectId(id)};
+      const updateDoc = {
+        $set:  UpdatedDetails
+    
+      }
+
+      try{
+        const result = await carsCollection.updateOne(filter,updateDoc);
+        res.send(result);
+      }
+      catch(error){
+        res.status(500).send({error: "Update Failed"});
+      }
+    })
+
+
     app.listen(port, ()=> {
     console.log(`Car Sale App listenting on port ${port}`);
     })
