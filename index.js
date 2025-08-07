@@ -122,6 +122,15 @@ async function run() {
 
 
 
+    app.delete('/delete-cars/:id', async(req,res)=> {
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)};
+      const result = await carsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+
+
     app.patch('/update-booking-data/:id', async(req,res)=> {
       const id = req.params.id;
       const updatedField = req.body;
@@ -156,7 +165,7 @@ async function run() {
       catch(error){
         res.status(500).send({error: "Update Failed"});
       }
-    })
+    });
 
 
     app.listen(port, ()=> {
