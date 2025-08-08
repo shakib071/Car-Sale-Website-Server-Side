@@ -200,9 +200,9 @@ async function run() {
       // console.log(bookingData);
       const result = await carsBookingCollection.insertOne(bookingData);
       // console.log(result.insertedId);
-      await carsBookingCollection.updateOne(
-      { _id: result.insertedId},
-      { $inc: { "carDetails.bookingCount": 1 } });
+      // await carsBookingCollection.updateOne(
+      // { _id: result.insertedId},
+      // { $inc: { "carDetails.bookingCount": 1 } });
 
       res.send(result);
     });
