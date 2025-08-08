@@ -77,13 +77,51 @@ async function run() {
       
     });
 
-   ;
     
     app.get('/myCars/:userId', async(req,res) => {
       const userId = req.params.userId;
       const query = {"userWhoAdded.uid" : userId};
-      const result = await carsCollection.find(query).toArray();
-      res.send(result);
+
+      if(req.query.sort){
+        const sortquery = req.query.sort;
+
+        if(sortquery.split('-')[0]=='date'){
+          const dateSortOrder = sortquery.split('-')[1] === 'asc' ? 1 : -1;
+          try{
+            const result = await carsCollection.find(query).sort({"carDetails.addedDate": dateSortOrder}).toArray();
+            res.send(result);
+          }
+
+          catch(err){
+            res.status(500).send({ error: "Failed to fetch cars" });
+          }
+        }
+
+        else if(sortquery.split('-')[0]=='price'){
+          const priceSortOrder = sortquery.split('-')[1] === 'asc' ? 1 : -1;
+          try{
+
+         
+            const result = await carsCollection.find(query).sort({"carDetails.dailyRentalPrice": priceSortOrder}).toArray();
+            res.send(result);
+          }
+          catch(err){
+            res.status(500).send({ error: "Failed to fetch cars" });
+          }
+        }
+        else{
+          
+          const result = await carsCollection.find(query).toArray();
+          res.send(result);
+        }
+
+      }
+      else{
+        
+        const result = await carsCollection.find(query).toArray();
+        res.send(result);
+      }
+      
     });
 
 
