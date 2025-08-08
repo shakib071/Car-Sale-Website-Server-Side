@@ -11,8 +11,9 @@ const decoded = Buffer.from(process.env.FIREBASE_SERVICE_KEY,'base64').toString(
 const serviceAccount = JSON.parse(decoded);
 
 //middleware
+// app.use(cors());
 app.use(cors({
-  origin: ['https://car-sale-website-aea7c.web.app'],
+  origin: ['https://car-sale-website-aea7c.web.app','http://localhost:5173'],
   credentials: true
 }));
 app.use(express.json());
