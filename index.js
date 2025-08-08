@@ -5,6 +5,11 @@ const { MongoClient , ServerApiVersion , ObjectId} = require('mongodb');
 require('dotenv').config();
 const cors = require('cors');
 
+const admin = require("firebase-admin");
+
+const decoded = Buffer.from(process.env.FIREBASE_SERVICE_KEY,'base64').toString('utf-8');
+const serviceAccount = JSON.parse(decoded);
+
 //middleware
 app.use(cors());
 app.use(express.json());
@@ -21,6 +26,34 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+
+
+const varifyFirebaseToken = async(req,res,next) => {
+  const authHeader = req.headers?.authorization;
+
+  if(!authHeader || !authHeader.startsWith(`Bearer `)){
+    return res.status(401).send({message : 'unauthorized access'});
+  }
+
+  const token = authHeader.split(' ')[1];
+  try{
+    const decoded = await admin.auth().verifyIdToken(token);
+    req.decoded = decoded;
+    // console.log(decoded);
+  }
+  catch(error){
+    return res.status(401).send({message : 'unauthorized access'});
+  }
+  // console.log(token);
+  next();
+}
 
 
 
@@ -78,9 +111,13 @@ async function run() {
     });
 
     
-    app.get('/myCars/:userId', async(req,res) => {
+    app.get('/myCars/:userId', varifyFirebaseToken, async(req,res) => {
       const userId = req.params.userId;
       const query = {"userWhoAdded.uid" : userId};
+
+      if(userId !== req.decoded.uid){
+        return res.status(403).message({message: 'forbidden access'});
+      }
 
       if(req.query.sort){
         const sortquery = req.query.sort;
@@ -133,8 +170,11 @@ async function run() {
     })
 
 
-    app.get('/bookings/:userId',async(req,res) => {
+    app.get('/bookings/:userId',varifyFirebaseToken,async(req,res) => {
       const userId = req.params.userId;
+      if(userId !== req.decoded.uid ){
+        return res.status(403).message({message: 'forbidden access'});
+      }
       const query = {"userWhoAdded.uid" : userId};
       const result = await carsBookingCollection.find(query).toArray();
       res.send(result);
@@ -154,7 +194,13 @@ async function run() {
 
     app.post('/booking',async(req,res) => {
       const bookingData = req.body;
+      // console.log(bookingData);
       const result = await carsBookingCollection.insertOne(bookingData);
+      // console.log(result.insertedId);
+      await carsCollection.updateOne(
+      { _id: result.insertedId},
+      { $inc: { "carDetails.bookingCount": 1 } });
+
       res.send(result);
     });
 
